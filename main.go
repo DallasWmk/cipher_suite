@@ -1,36 +1,35 @@
 package main
 
 import (
-	"crypto/rand"
 	"fmt"
 
 	"github.com/DallasWmk/security_suite/factory"
 )
 
-func useSecuritySuite(f factory.SecuritySuiteFactory) {
-	encryption := f.CreateEncryption()
-	authentication := f.CreateAuthentication()
-	protection := f.CreateNetworkProtection()
+func useSecuritySuite(f factory.EncryptionFactory) {
+	encryption := f.CreateEncryptor()
 
-	key := make([]byte, 32)
-	_, err := rand.Read(key)
+	key, err := f.GenerateKey()
 	if err != nil {
-		fmt.Println("here")
-		panic(err)
+		panic(fmt.Errorf("failed to generate key: %w", err))
 	}
-	output, err := encryption.Encrypt(key, "This is a very secret message! Dont let anyone read me!!!")
+	encrypted, err := encryption.Encrypt(key, "This is a very secret message! Dont let anyone read me!!!")
 	if err != nil {
-		fmt.Println(err)
+		panic(fmt.Errorf("failed while encrypting: %w", err))
 	}
-	fmt.Println(output)
-	fmt.Println(authentication.Authenticate("Alice"))
-	fmt.Println(protection.Protect())
+	fmt.Printf("Encrypted: %x\n", encrypted)
+
+	decrypted, err := encryption.Decrypt(key, encrypted)
+	if err != nil {
+		panic(fmt.Errorf("failed while decrypting: %w", err))
+	}
+	fmt.Printf("Decrypted: %s\n", decrypted)
 }
 
 func main() {
-	fmt.Println("=== Basic Security Suite ===")
-	useSecuritySuite(&factory.BasicSecurityFactory{})
+	fmt.Println("=== AES Encryption ===")
+	useSecuritySuite(&factory.AESFactory{})
 
-	fmt.Println("\n=== Advanced Security Suite ===")
-	useSecuritySuite(&factory.AdvancedSecurityFactory{})
+	fmt.Println("\n=== RSA Encrption ===")
+	useSecuritySuite(&factory.RSAFactory{})
 }
